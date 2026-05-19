@@ -46,6 +46,7 @@ void colocarBomba() {
     state.bomba.tempoBomba = 0;
 
     screenBuffer[state.bomba.pos.y][state.bomba.pos.x] = BOMBA;
+    state.hud.bombasUsadas++;
 }
 
 
@@ -208,6 +209,7 @@ void inputHandler() {
         if (!parede1 && !parede2) {
             state.p1.pos.x += dx;
             state.p1.pos.y += dy;
+            state.hud.movimentos++;
         }
     }
 }
@@ -240,6 +242,7 @@ void rodarJogo(int mapa[][wMax + 2]) {
 
     state = GameState();
     state.session = true;
+    state.hud.inicioJogo = time(nullptr);
 
     // copia mapa
     for (int i = 0; i < hMax + 2; i++)
@@ -277,7 +280,7 @@ void rodarJogo(int mapa[][wMax + 2]) {
                 vivos.push_back({e.pos.x, e.pos.y});
         }
 
-        renderDraw(state.p1.pos.x, state.p1.pos.y, state.p1.alive, vivos);
+        renderDraw(state.p1.pos.x, state.p1.pos.y, state.p1.alive, vivos, state.hud);
 
         if (!state.p1.alive) {
             venceu = false;

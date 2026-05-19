@@ -10,6 +10,7 @@
 #include <windows.h>
 #include <vector>
 #include "Render.h"
+#include <ctime>
 
 
 // CONSTANTES
@@ -57,6 +58,7 @@ struct GameState {
     Player p1;
     Bomba bomba;
     std::vector<Enemy> enemies;
+    HudInfo hud;
 };
 
 
