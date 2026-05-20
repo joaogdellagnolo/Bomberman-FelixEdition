@@ -9,6 +9,9 @@
 #include <iostream>
 #include <vector>
 #include <windows.h>
+#include <ctime>
+#include <iomanip>
+
 
 // cores usadas no console 
 #define COLOR_WALL      FOREGROUND_BLUE | FOREGROUND_INTENSITY
@@ -76,11 +79,62 @@ void limparTela() {
     system("cls");
 }
 
+struct HudInfo {
+    int pontuacao = 0;
+    int movimentos = 0;
+    int bombasUsadas = 0;
+    int itensPegos = 0;
+
+    int itemFogo = 0;
+    int itemBombas = 0;
+    int itemVidaExtra = 0;
+    int itemBombaRelogio = 0;
+    int itemSobreviveBomba = 0;
+    int itemPassaBlocos = 0;
+
+    time_t inicioJogo = 0;
+};
+
+
+void renderHUD(HANDLE hConsole, const HudInfo& hud) {
+    int tempoDecorrido = time(nullptr) - hud.inicioJogo;
+    int minutos = tempoDecorrido / 60;
+    int segundos = tempoDecorrido % 60;
+
+    SetConsoleTextAttribute(hConsole, COLOR_BOMB);
+
+    std::cout << "\n+----------------------+\n";
+
+    std::cout << "| Tempo: "
+              << std::setw(2) << std::setfill('0') << minutos
+              << ":"
+              << std::setw(2) << segundos
+              << std::setfill(' ')
+              << " \n";
+
+    std::cout << "| Pontos: " << hud.pontuacao << " \n";
+    std::cout << "| Movimentos: " << hud.movimentos << " \n";
+    std::cout << "| Bombas: " << hud.bombasUsadas << " \n";
+
+    std::cout << "+----------------------+\n";
+
+    std::cout << "| Fogo +" << hud.itemFogo << " \n";
+    std::cout << "| Bombas +" << hud.itemBombas << " \n";
+    std::cout << "| Vida +" << hud.itemVidaExtra << " \n";
+    std::cout << "| Relogio " << hud.itemBombaRelogio << " \n";
+    std::cout << "| Escudo " << hud.itemSobreviveBomba << " \n";
+    std::cout << "| Passa Blocos " << hud.itemPassaBlocos << " \n";
+
+    std::cout << "+----------------------+\n";
+
+    SetConsoleTextAttribute(hConsole, COLOR_DEFAULT);
+}
 
 // desenha tudo na tela
 // jogador + inimigos + mapa
 void renderDraw(int playerX, int playerY, bool playerAlive,
-                       const std::vector<std::pair<int,int>>& inimigosVivos)
+                const std::vector<std::pair<int,int>>& inimigosVivos,
+                const HudInfo& hud)
 {
     // buffer do main
     extern int screenBuffer[hMax + 2][wMax + 2];
@@ -128,7 +182,9 @@ void renderDraw(int playerX, int playerY, bool playerAlive,
 
         std::cout << "\n";
     }
-
+    
+    renderHUD(hConsole, hud);
+    
     // volta cor padrao no final
     SetConsoleTextAttribute(hConsole, COLOR_DEFAULT);
 }
