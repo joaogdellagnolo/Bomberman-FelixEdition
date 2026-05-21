@@ -75,7 +75,7 @@ void renderCursorHandler() {
 
 
 // limpa a tela inteira (obvio)
-void limparTela() {
+inline void limparTela() {
     system("cls");
 }
 
@@ -96,7 +96,8 @@ struct HudInfo {
 };
 
 
-void renderHUD(HANDLE hConsole, const HudInfo& hud) {
+void renderHUD(HANDLE hConsole, const HudInfo& hud) 
+{
     int tempoDecorrido = time(nullptr) - hud.inicioJogo;
     int minutos = tempoDecorrido / 60;
     int segundos = tempoDecorrido % 60;
@@ -131,7 +132,7 @@ void renderHUD(HANDLE hConsole, const HudInfo& hud) {
 }
 
 // desenha tudo na tela
-// jogador + inimigos + mapa
+// jogador + inimigos + mapa + hud
 void renderDraw(int playerX, int playerY, bool playerAlive,
                 const std::vector<std::pair<int,int>>& inimigosVivos,
                 const HudInfo& hud)
