@@ -238,18 +238,25 @@ int main() {
 
     srand(time(0));
 
-    bool executando = true;
 
-    while (executando) {
-        int opcao = renderMenu(); // Supondo que seu menu retorne a escolha (1 = Jogar, 2 = Sair)
+    int opcao = renderMenu();
 
-        if (opcao == 1) {
+    switch (opcao) {
+
+        case 1:
+            cout << "Iniciando jogo...\n";
             limparTela();
-            rodarJogo(map_0); // Quando rodarJogo acabar, o 'while' vai repetir e mostrar o menu de novo!
-        } 
-        else if (opcao == 4) {
-            executando = false; // Fecha o jogo de forma limpa
-        }
+            rodarJogo(map_0);
+            break;
+
+        case 2:
+            cout << "Mostrando creditos...\n";
+            break;
+
+        case 3:
+            cout << "Saindo...\n";
+            break;
     }
+
     return 0;
 }

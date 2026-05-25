@@ -10,11 +10,10 @@ int renderMenu() {
 
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    const int TOTAL_OPCOES = 4;
+    const int TOTAL_OPCOES = 3;
 
     std::string opcoes[TOTAL_OPCOES] = {
         "Jogar",
-        "Dificuldades",
         "Creditos",
         "Sair"
     };
