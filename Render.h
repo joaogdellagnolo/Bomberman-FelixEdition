@@ -22,12 +22,8 @@
 #define COLOR_EXPLOSION FOREGROUND_RED | FOREGROUND_INTENSITY
 #define COLOR_DEFAULT   FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE 
 
-#define wMax 22
-#define hMax 12
-
 //init var
 static const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
 
 // tipos de tiles que podem aparecer no mapa
 enum sprites { 
@@ -80,7 +76,7 @@ inline void renderCursorHandler() {
 
 
 // limpa a tela inteira (obvio)
-void limparTela() {
+inline void limparTela() {
     system("cls");
 }
 

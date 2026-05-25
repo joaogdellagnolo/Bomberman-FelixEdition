@@ -6,7 +6,7 @@
 
 // cria inimigo
 void criarInimigo(int x, int y) {
-    state.enemies.push_back(Enemy(x, y));
+    state->enemies.push_back(Enemy(x, y));
 }
 
 // atualiza inimigo (movimento + morte)
@@ -16,7 +16,7 @@ void updateInimigo(Enemy& inimigo) {
         return;
 
     // morreu na explosao
-    if (screenBuffer[inimigo.pos.y][inimigo.pos.x] == BOMBA_EXPLOSAO) {
+    if (state->screenBuffer[inimigo.pos.y][inimigo.pos.x] == BOMBA_EXPLOSAO) {
         inimigo.inimigoVivo = false;
         return;
     }
@@ -57,7 +57,7 @@ void updateInimigo(Enemy& inimigo) {
 
 // ganhou o jogo?
 bool todosInimigosMortos() {
-    for (const Enemy& e : state.enemies) {
+    for (const Enemy& e : state->enemies) {
         if (e.inimigoVivo)
             return false;
     }

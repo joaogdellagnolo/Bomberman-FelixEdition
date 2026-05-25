@@ -75,6 +75,7 @@ struct HudInfo {
     int itensPegos = 0;
 
     int itemFogo = 0;
+    int itemEscudo = 0;
     int itemBombas = 0;
     int itemVidaExtra = 0;
     int itemBombaRelogio = 0;

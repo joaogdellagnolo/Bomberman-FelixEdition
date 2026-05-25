@@ -16,7 +16,6 @@
 #include <ctime>
 
 
-
 // verifica se tem o target na posicao dejesada(poderia ser apenas a posicao dejesada mais pode ser util ter a posição atual de quem pediu o check)
 bool checkColisao(int target, int posX, int posY, int offX, int offY) {
     int destX = posX + offX;
@@ -30,130 +29,6 @@ bool checkColisao(int target, int posX, int posY, int offX, int offY) {
 }
 
 
-// coloca bomba onde o jogador ta
-void colocarBomba() {
-
-    // apenas uma bomba
-    if (state->bomba.temBomba || state->bomba.explodindo)
-        return;
-
-    state->bomba.temBomba = true;
-    state->bomba.pos = state->p1.pos;
-    state->bomba.tempoBomba = 0;
-
-    state->screenBuffer[state->bomba.pos.y][state->bomba.pos.x] = BOMBA;
-    state->hud.bombasUsadas++;
-}
-
-
-// cuida da explosao (criar e apagar)
-void gerenciarExplosao(int tipoTile) {
-    int bx = state->bomba.pos.x;
-    int by = state->bomba.pos.y;
-
-    // centro
-    if (state->screenBuffer[by][bx] != BLOCO_SOLIDO)
-        state->screenBuffer[by][bx] = tipoTile;
-
-    // cima
-    if (by > 0 && state->screenBuffer[by - 1][bx] != BLOCO_SOLIDO)
-        state->screenBuffer[by - 1][bx] = tipoTile;
-
-    // baixo
-    if (by < hMax && state->screenBuffer[by + 1][bx] != BLOCO_SOLIDO)
-        state->screenBuffer[by + 1][bx] = tipoTile;
-
-    // esquerda
-    if (bx > 0 && state->screenBuffer[by][bx - 1] != BLOCO_SOLIDO)
-        state->screenBuffer[by][bx - 1] = tipoTile;
-
-    // direita
-    if (bx < wMax && state->screenBuffer[by][bx + 1] != BLOCO_SOLIDO)
-        state->screenBuffer[by][bx + 1] = tipoTile;
-}
-
-
-// controla o tempo da bomba
-void updateBomba() {
-
-    // esperando explodir
-    if (state->bomba.temBomba && !state->bomba.explodindo) {
-        state->bomba.tempoBomba++;
-
-        if (state->bomba.tempoBomba >= TICKS_UNTIL_NEXT_STATE_BOMB) {
-            gerenciarExplosao(BOMBA_EXPLOSAO);
-
-            state->bomba.temBomba = false;
-            state->bomba.explodindo = true;
-            state->bomba.cooldownBomba = 0;
-        }
-    }
-
-    // explosao ativa
-    if (state->bomba.explodindo) {
-        state->bomba.cooldownBomba++;
-
-        if (state->bomba.cooldownBomba > 20) {
-            gerenciarExplosao(WHITE); // limpa fogo
-            state->bomba.explodindo = false;
-        }
-    }
-}
-
-
-// cria inimigo
-void criarInimigo(int x, int y) {
-    state->enemies.push_back(Enemy(x, y));
-}
-
-
-// atualiza inimigo (movimento + morte)
-void updateInimigo(Enemy& inimigo) {
-
-    if (!inimigo.inimigoVivo)
-        return;
-
-    // morreu na explosao
-    if (state->screenBuffer[inimigo.pos.y][inimigo.pos.x] == BOMBA_EXPLOSAO) {
-        inimigo.inimigoVivo = false;
-        return;
-    }
-
-    inimigo.tempoInimigo++;
-
-    if (inimigo.tempoInimigo < TICKS_UNTIL_NEXT_POS_ENEMY)
-        return;
-
-    inimigo.tempoInimigo = 0;
-
-    // se nao tem passos definidos, escolhe nova direcao
-    if (inimigo.passosRestantes <= 0) {
-        int dir = rand() % 4;
-
-        inimigo.dx = (dir == 2 ? -1 : (dir == 3 ? 1 : 0));
-        inimigo.dy = (dir == 0 ? -1 : (dir == 1 ? 1 : 0));
-
-        inimigo.passosRestantes = (rand() % 3) + 1; // 1 a 3 passos
-    }
-
-    // tenta andar 1 passo
-    bool bloqueado =
-        checkColisao(BLOCO_SOLIDO, inimigo.pos.x, inimigo.pos.y, inimigo.dx, inimigo.dy) ||
-        checkColisao(PAREDE_DESTRUTIVEL, inimigo.pos.x, inimigo.pos.y, inimigo.dx, inimigo.dy) ||
-        checkColisao(BOMBA, inimigo.pos.x, inimigo.pos.y, inimigo.dx, inimigo.dy);
-
-    if (!bloqueado) {
-        inimigo.pos.x += inimigo.dx;
-        inimigo.pos.y += inimigo.dy;
-        inimigo.passosRestantes--; // anda 1 passo por frame
-    }
-    else {
-        // se bateu em algo, cancela movimento atual
-        inimigo.passosRestantes = 0;
-    }
-}
-
-
 // ve se jogador bateu em inimigo
 bool checkColisaoJogadorInimigo() {
     for (const Enemy& e : state->enemies) {
@@ -164,16 +39,6 @@ bool checkColisaoJogadorInimigo() {
         }
     }
     return false;
-}
-
-
-// ganhou o jogo?
-bool todosInimigosMortos() {
-    for (const Enemy& e : state->enemies) {
-        if (e.inimigoVivo)
-            return false;
-    }
-    return true;
 }
 
 
@@ -229,13 +94,13 @@ void spawnarItens()
             y = rand() % hMax;
 
         } while (
-            screenBuffer[y][x] != WHITE ||
-            (x == state.p1.pos.x && y == state.p1.pos.y)
+            state->screenBuffer[y][x] != WHITE ||
+            (x == state->p1.pos.x && y == state->p1.pos.y)
         );
 
         char simbolo = sortearTipoItem();
 
-        state.itens.push_back(Item(x, y, simbolo));
+        state->itens.push_back(Item(x, y, simbolo));
     }
 }
 
@@ -243,7 +108,7 @@ void renderizarItens()
 {
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    for (Item& item : state.itens)
+    for (Item& item : state->itens)
     {
         if (!item.ativo)
             continue;
@@ -262,36 +127,35 @@ void renderizarItens()
 
 void verificarColetaItem()
 {
-    for (Item& item : state.itens)
+    for (Item& item : state->itens)
     {
         if (!item.ativo)
             continue;
 
-        if (item.pos.x == state.p1.pos.x && item.pos.y == state.p1.pos.y)
+        if (item.pos.x == state->p1.pos.x && item.pos.y == state->p1.pos.y)
         {
             item.ativo = false;
 
             if (item.simbolo == 'F')
-                state.hud.itemFogo++;
+                state->hud.itemFogo++;
 
             else if (item.simbolo == 'B')
-                state.hud.itemBombas++;
+                state->hud.itemBombas++;
 
             else if (item.simbolo == 'V')
-                state.hud.itemVidaExtra++;
+                state->hud.itemVidaExtra++;
 
             else if (item.simbolo == 'R')
-                state.hud.itemBombaRelogio++;
+                state->hud.itemBombaRelogio++;
 
             else if (item.simbolo == 'E')
-                state.hud.itemEscudo++;
+                state->hud.itemEscudo++;
 
             else if (item.simbolo == 'P')
-                state.hud.itemPassaBlocos++;
+                state->hud.itemPassaBlocos++;
         }
     }
 }
-
 
 // menu
 int exibirMenu() {
@@ -340,7 +204,10 @@ GameState loadGame()
 }
 
 // loop principal
-void rodarJogo(int mapa[][wMax]) {
+void rodarJogo(int mapa[][wMax]) 
+{
+
+    state = new GameState();
     state->session = true;
     state->hud.inicioJogo = time(nullptr);
 
@@ -359,9 +226,7 @@ void rodarJogo(int mapa[][wMax]) {
 
     bool venceu = false;
 
-    while (state->session) 
-    {
-        state->timestamp = time(nullptr);
+    while (state->session) {
 
         inputHandler();
         verificarColetaItem();
@@ -386,18 +251,18 @@ void rodarJogo(int mapa[][wMax]) {
         }
 
         renderDraw();
-	renderizarItens();
+        renderizarItens();
 
-        if (!state->p1.alive) 
-        {
+        if (!state->p1.alive) {
             venceu = false;
             state->session = false;
         }
-        else if (todosInimigosMortos()) 
-        {
+        else if (todosInimigosMortos()) {
             venceu = true;
             state->session = false;
         }
+
+        Sleep(16);
     }
     renderResult(venceu);
 }
@@ -454,6 +319,4 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
             return FALSE;
     }
 }
-
-
 
