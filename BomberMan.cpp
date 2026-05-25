@@ -6,6 +6,8 @@
 
 #include "BomberMan.h"
 #include "Mapas.h"
+#include "inimigo.h"
+#include "Bomba.h"
 
 #include <signal.h>
 #include <iostream>
@@ -21,7 +23,7 @@ bool checkColisao(int target, int posX, int posY, int offX, int offY) {
     int destY = posY + offY;
 
     // evita acessar fora do mapa
-    if (destX < 0 || destX >= wMax + 2 || destY < 0 || destY >= hMax + 2)
+    if (destX < 0 || destX >= wMax || destY < 0 || destY >= hMax)
         return true;
 
     return state->screenBuffer[destY][destX] == target;
@@ -208,28 +210,87 @@ void inputHandler() {
     }
 }
 
+char sortearTipoItem()
+{
+    char tipos[] = {'F', 'B', 'V', 'R', 'E', 'P'};
+    return tipos[rand() % 6];
+}
 
-// tela de fim
-void exibirResultado(bool venceu) {
+void spawnarItens()
+{
+    int quantidade = (rand() % 6) + 2; // 2 até 7 itens
 
-    limparTela();
+    for (int i = 0; i < quantidade; i++)
+    {
+        int x, y;
 
+        do {
+            x = rand() % wMax;
+            y = rand() % hMax;
+
+        } while (
+            screenBuffer[y][x] != WHITE ||
+            (x == state.p1.pos.x && y == state.p1.pos.y)
+        );
+
+        char simbolo = sortearTipoItem();
+
+        state.itens.push_back(Item(x, y, simbolo));
+    }
+}
+
+void renderizarItens()
+{
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    if (venceu) {
-        SetConsoleTextAttribute(h, COLOR_PLAYER);
-        std::cout << "\n\n  VOCE VENCEU!\n";
-    } else {
-        SetConsoleTextAttribute(h, COLOR_ENEMY);
-        std::cout << "\n\n  GAME OVER!\n";
+    for (Item& item : state.itens)
+    {
+        if (!item.ativo)
+            continue;
+
+        COORD coord;
+        coord.X = item.pos.x;
+        coord.Y = item.pos.y;
+        SetConsoleCursorPosition(h, coord);
+
+        SetConsoleTextAttribute(h, COLOR_BOMB);
+        std::cout << item.simbolo;
     }
 
     SetConsoleTextAttribute(h, COLOR_DEFAULT);
-
-    std::cout << "\nvoltando...\n";
-    Sleep(2000);
 }
 
+void verificarColetaItem()
+{
+    for (Item& item : state.itens)
+    {
+        if (!item.ativo)
+            continue;
+
+        if (item.pos.x == state.p1.pos.x && item.pos.y == state.p1.pos.y)
+        {
+            item.ativo = false;
+
+            if (item.simbolo == 'F')
+                state.hud.itemFogo++;
+
+            else if (item.simbolo == 'B')
+                state.hud.itemBombas++;
+
+            else if (item.simbolo == 'V')
+                state.hud.itemVidaExtra++;
+
+            else if (item.simbolo == 'R')
+                state.hud.itemBombaRelogio++;
+
+            else if (item.simbolo == 'E')
+                state.hud.itemEscudo++;
+
+            else if (item.simbolo == 'P')
+                state.hud.itemPassaBlocos++;
+        }
+    }
+}
 
 
 // menu
@@ -279,13 +340,13 @@ GameState loadGame()
 }
 
 // loop principal
-void rodarJogo(int mapa[][wMax + 2]) {
+void rodarJogo(int mapa[][wMax]) {
     state->session = true;
     state->hud.inicioJogo = time(nullptr);
 
     // copia mapa
-    for (int i = 0; i < hMax + 2; i++)
-        for (int j = 0; j < wMax + 2; j++)
+    for (int i = 0; i < hMax; i++)
+        for (int j = 0; j < wMax; j++)
             state->screenBuffer[i][j] = mapa[i][j];
 
     criarInimigo(1, 7);
@@ -294,6 +355,8 @@ void rodarJogo(int mapa[][wMax + 2]) {
     criarInimigo(20, 10);
     criarInimigo(9, 6);
 
+    spawnarItens();
+
     bool venceu = false;
 
     while (state->session) 
@@ -301,6 +364,7 @@ void rodarJogo(int mapa[][wMax + 2]) {
         state->timestamp = time(nullptr);
 
         inputHandler();
+        verificarColetaItem();
         updateBomba();
 
         for (Enemy& e : state->enemies)
@@ -322,6 +386,7 @@ void rodarJogo(int mapa[][wMax + 2]) {
         }
 
         renderDraw();
+	renderizarItens();
 
         if (!state->p1.alive) 
         {
@@ -334,8 +399,7 @@ void rodarJogo(int mapa[][wMax + 2]) {
             state->session = false;
         }
     }
-
-    exibirResultado(venceu);
+    renderResult(venceu);
 }
 
 
@@ -354,7 +418,7 @@ int main() {
     int op = -1;
 
     while (op != 0) {
-        op = exibirMenu();
+        op = renderMenu(); // Corrigido de exibirMenu para RenderMenu conforme definido em Render.h
 
         if (op == 1)
         {

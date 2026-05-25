@@ -22,8 +22,12 @@
 #define COLOR_EXPLOSION FOREGROUND_RED | FOREGROUND_INTENSITY
 #define COLOR_DEFAULT   FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE 
 
+#define wMax 22
+#define hMax 12
+
 //init var
 static const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
 
 // tipos de tiles que podem aparecer no mapa
 enum sprites { 
@@ -82,11 +86,16 @@ void limparTela() {
 
 void renderDraw()
 {
+    // buffer do main
+    extern int screenBuffer[hMax][wMax];
+
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
     // volta cursor pro inicio pra sobrescrever frame antigo
     renderCursorHandler();
 
-    for (int i = 0; i < hMax + 2; i++) {
-        for (int j = 0; j < wMax + 2; j++) {
+    for (int i = 0; i < hMax; i++) {
+        for (int j = 0; j < wMax; j++) {
 
             // verifica se tem inimigo aqui
             bool temInimigo = false;
@@ -158,4 +167,49 @@ void renderDraw()
     
     // volta cor padrao no final
     SetConsoleTextAttribute(hConsole, COLOR_DEFAULT);
+}
+
+// tela de fim
+void renderResult(bool venceu) {
+
+    limparTela();
+
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    if (venceu) {
+        SetConsoleTextAttribute(h, COLOR_PLAYER);
+        std::cout << "\n\n  VOCE VENCEU!\n";
+    } else {
+        SetConsoleTextAttribute(h, COLOR_ENEMY);
+        std::cout << "\n\n  GAME OVER!\n";
+    }
+
+    SetConsoleTextAttribute(h, COLOR_DEFAULT);
+
+    std::cout << "\nvoltando...\n";
+    Sleep(2000);
+}
+
+// menu
+int renderMenu() {
+
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    limparTela();
+    SetConsoleTextAttribute(h, COLOR_BOMB);
+    std::cout << "======================\n";
+    std::cout << "\nBOMBERMAN\n";
+    std::cout << "\n======================\n\n";
+    SetConsoleTextAttribute(h, COLOR_DEFAULT);
+    std::cout << "WASD = mover\n";
+    std::cout << "E = bomba\n";
+    std::cout << "T = sair\n\n";
+
+    std::cout << "1 jogar\n";
+    std::cout << "0 sair\n\n";
+
+    int op;
+    std::cin >> op;
+
+    return op;
 }

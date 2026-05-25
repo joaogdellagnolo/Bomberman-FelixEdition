@@ -16,11 +16,11 @@
 extern struct GameState* state; 
 
 // CONSTANTES
+
+//Modificar esses valores para + desacelera e para - acelera a bomba/inimigo.
+#define TICKS_UNTIL_NEXT_STATE_BOMB 45
 #define wMax 20
 #define hMax 10
-#define TICKS_UNTIL_NEXT_POS_ENEMY 30 //Modificar esses valores para + desacelera e para - acelera a bomba/inimigo.
-#define TICKS_UNTIL_NEXT_STATE_BOMB 45
-
 
 // STRUCTS (Dados do Jogo)
 
@@ -55,6 +55,18 @@ struct Bomba {
     int cooldownBomba = 0;
 };
 
+struct Item {
+    Coordenadas pos;
+    char simbolo;
+    bool ativo;
+
+    Item(int x, int y, char s) {
+        pos = {x, y};
+        simbolo = s;
+        ativo = true;
+    }
+};
+
 
 struct HudInfo {
     int pontuacao = 0;
@@ -77,6 +89,7 @@ struct GameState {
     Player p1;
     Bomba bomba;
     std::vector<Enemy> enemies;
+    std::vector<Item> itens;
     HudInfo hud;
     int screenBuffer[hMax + 2][wMax + 2];
     time_t timestamp;
