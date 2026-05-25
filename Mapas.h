@@ -5,14 +5,14 @@
 
 // BUFFER DE TELA
 
-extern int screenBuffer[hMax + 2][wMax + 2];
+extern int screenBuffer[hMax][wMax];
 
 
 // DEFINIÇÃO DOS MAPAS
 
 // 1 = Parede, 0 = Chão 5= Parede Fragil
 
-int map_0[12][22] = {
+int map_0[hMax][wMax] = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, 
     {1, 0, 0, 5, 5, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 0, 0, 1}, 
     {1, 0, 1, 5, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 5, 1, 0, 0, 1}, 

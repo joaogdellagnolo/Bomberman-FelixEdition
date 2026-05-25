@@ -16,7 +16,6 @@
 // CONSTANTES
 
 //Modificar esses valores para + desacelera e para - acelera a bomba/inimigo.
-#define TICKS_UNTIL_NEXT_POS_ENEMY 30
 #define TICKS_UNTIL_NEXT_STATE_BOMB 45
 
 
@@ -53,11 +52,24 @@ struct Bomba {
     int cooldownBomba = 0;
 };
 
+struct Item {
+    Coordenadas pos;
+    char simbolo;
+    bool ativo;
+
+    Item(int x, int y, char s) {
+        pos = {x, y};
+        simbolo = s;
+        ativo = true;
+    }
+};
+
 struct GameState {
     bool session = false;
     Player p1;
     Bomba bomba;
     std::vector<Enemy> enemies;
+    std::vector<Item> itens;
     HudInfo hud;
 };
 
@@ -65,13 +77,12 @@ struct GameState {
 //Variaveis (Acessiveis por outros arquivos)
 
 extern GameState state;
-extern int screenBuffer[hMax + 2][wMax + 2];
+extern int screenBuffer[hMax][wMax];
 
 
 //Prototipos das funções
 
-
-void rodarJogo(int mapa[][wMax + 2]);
+void rodarJogo(int mapa[][wMax]);
 void inputHandler();
 void updateBomba();
 void updateInimigo(Enemy& inimigo);
@@ -79,3 +90,7 @@ void colocarBomba();
 void gerenciarExplosao(int tipoTile);
 bool checkColisao(int target, int posX, int posY, int offX, int offY);
 void criarInimigo(int x, int y);
+void spawnarItens();
+void renderizarItens();
+void verificarColetaItem();
+char sortearTipoItem();

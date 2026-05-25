@@ -1,4 +1,3 @@
-
 // =============================================
 // Trabalho M1 - Bomberman
 // Algoritmos e Programação II
@@ -7,6 +6,8 @@
 
 #include "BomberMan.h"
 #include "Mapas.h"
+#include "inimigo.h"
+#include "Bomba.h"
 
 #include <iostream>
 #include <conio.h>
@@ -15,7 +16,7 @@
 
 // variaveis principais do jogo
 GameState state;
-int screenBuffer[hMax + 2][wMax + 2];
+int screenBuffer[hMax][wMax];
 
 
 // LOGICA DO JOGO
@@ -27,134 +28,10 @@ bool checkColisao(int target, int posX, int posY, int offX, int offY) {
     int destY = posY + offY;
 
     // evita acessar fora do mapa
-    if (destX < 0 || destX >= wMax + 2 || destY < 0 || destY >= hMax + 2)
+    if (destX < 0 || destX >= wMax || destY < 0 || destY >= hMax)
         return true;
 
     return screenBuffer[destY][destX] == target;
-}
-
-
-// coloca bomba onde o jogador ta
-void colocarBomba() {
-
-    // apenas uma bomba
-    if (state.bomba.temBomba || state.bomba.explodindo)
-        return;
-
-    state.bomba.temBomba = true;
-    state.bomba.pos = state.p1.pos;
-    state.bomba.tempoBomba = 0;
-
-    screenBuffer[state.bomba.pos.y][state.bomba.pos.x] = BOMBA;
-    state.hud.bombasUsadas++;
-}
-
-
-// cuida da explosao (criar e apagar)
-void gerenciarExplosao(int tipoTile) {
-    int bx = state.bomba.pos.x;
-    int by = state.bomba.pos.y;
-
-    // centro
-    if (screenBuffer[by][bx] != BLOCO_SOLIDO)
-        screenBuffer[by][bx] = tipoTile;
-
-    // cima
-    if (by > 0 && screenBuffer[by - 1][bx] != BLOCO_SOLIDO)
-        screenBuffer[by - 1][bx] = tipoTile;
-
-    // baixo
-    if (by < hMax && screenBuffer[by + 1][bx] != BLOCO_SOLIDO)
-        screenBuffer[by + 1][bx] = tipoTile;
-
-    // esquerda
-    if (bx > 0 && screenBuffer[by][bx - 1] != BLOCO_SOLIDO)
-        screenBuffer[by][bx - 1] = tipoTile;
-
-    // direita
-    if (bx < wMax && screenBuffer[by][bx + 1] != BLOCO_SOLIDO)
-        screenBuffer[by][bx + 1] = tipoTile;
-}
-
-
-// controla o tempo da bomba
-void updateBomba() {
-
-    // esperando explodir
-    if (state.bomba.temBomba && !state.bomba.explodindo) {
-        state.bomba.tempoBomba++;
-
-        if (state.bomba.tempoBomba >= TICKS_UNTIL_NEXT_STATE_BOMB) {
-            gerenciarExplosao(BOMBA_EXPLOSAO);
-
-            state.bomba.temBomba = false;
-            state.bomba.explodindo = true;
-            state.bomba.cooldownBomba = 0;
-        }
-    }
-
-    // explosao ativa
-    if (state.bomba.explodindo) {
-        state.bomba.cooldownBomba++;
-
-        if (state.bomba.cooldownBomba > 20) {
-            gerenciarExplosao(WHITE); // limpa fogo
-            state.bomba.explodindo = false;
-        }
-    }
-}
-
-
-// cria inimigo
-void criarInimigo(int x, int y) {
-    state.enemies.push_back(Enemy(x, y));
-}
-
-
-// atualiza inimigo (movimento + morte)
-void updateInimigo(Enemy& inimigo) {
-
-    if (!inimigo.inimigoVivo)
-        return;
-
-    // morreu na explosao
-    if (screenBuffer[inimigo.pos.y][inimigo.pos.x] == BOMBA_EXPLOSAO) {
-        inimigo.inimigoVivo = false;
-        return;
-    }
-
-    inimigo.tempoInimigo++;
-
-    if (inimigo.tempoInimigo < TICKS_UNTIL_NEXT_POS_ENEMY)
-        return;
-
-    inimigo.tempoInimigo = 0;
-
-    // se nao tem passos definidos, escolhe nova direcao
-    if (inimigo.passosRestantes <= 0) {
-        int dir = rand() % 4;
-
-        inimigo.dx = (dir == 2 ? -1 : (dir == 3 ? 1 : 0));
-        inimigo.dy = (dir == 0 ? -1 : (dir == 1 ? 1 : 0));
-
-        inimigo.passosRestantes = (rand() % 3) + 1; // 1 a 3 passos
-    }
-
-    // tenta andar 1 passo
-    bool bloqueado =
-        checkColisao(BLOCO_SOLIDO, inimigo.pos.x, inimigo.pos.y, inimigo.dx, inimigo.dy) ||
-        checkColisao(PAREDE_DESTRUTIVEL, inimigo.pos.x, inimigo.pos.y, inimigo.dx, inimigo.dy) ||
-        checkColisao(BOMBA, inimigo.pos.x, inimigo.pos.y, inimigo.dx, inimigo.dy);
-
-    if (!bloqueado) {
-        inimigo.pos.x += inimigo.dx;
-        inimigo.pos.y += inimigo.dy;
-        inimigo.passosRestantes--; // anda 1 passo por frame
-    }
-    else {
-        // se bateu em algo, cancela movimento atual
-        inimigo.passosRestantes = 0;
-    }
 }
 
 
@@ -168,16 +45,6 @@ bool checkColisaoJogadorInimigo() {
         }
     }
     return false;
-}
-
-
-// ganhou o jogo?
-bool todosInimigosMortos() {
-    for (const Enemy& e : state.enemies) {
-        if (e.inimigoVivo)
-            return false;
-    }
-    return true;
 }
 
 
@@ -214,39 +81,98 @@ void inputHandler() {
     }
 }
 
+char sortearTipoItem()
+{
+    char tipos[] = {'F', 'B', 'V', 'R', 'E', 'P'};
+    return tipos[rand() % 6];
+}
 
-// tela de fim
-void exibirResultado(bool venceu) {
+void spawnarItens()
+{
+    int quantidade = (rand() % 6) + 2; // 2 até 7 itens
 
-    limparTela();
+    for (int i = 0; i < quantidade; i++)
+    {
+        int x, y;
 
+        do {
+            x = rand() % wMax;
+            y = rand() % hMax;
+
+        } while (
+            screenBuffer[y][x] != WHITE ||
+            (x == state.p1.pos.x && y == state.p1.pos.y)
+        );
+
+        char simbolo = sortearTipoItem();
+
+        state.itens.push_back(Item(x, y, simbolo));
+    }
+}
+
+void renderizarItens()
+{
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    if (venceu) {
-        SetConsoleTextAttribute(h, COLOR_PLAYER);
-        std::cout << "\n\n  VOCE VENCEU!\n";
-    } else {
-        SetConsoleTextAttribute(h, COLOR_ENEMY);
-        std::cout << "\n\n  GAME OVER!\n";
+    for (Item& item : state.itens)
+    {
+        if (!item.ativo)
+            continue;
+
+        COORD coord;
+        coord.X = item.pos.x;
+        coord.Y = item.pos.y;
+        SetConsoleCursorPosition(h, coord);
+
+        SetConsoleTextAttribute(h, COLOR_BOMB);
+        std::cout << item.simbolo;
     }
 
     SetConsoleTextAttribute(h, COLOR_DEFAULT);
-
-    std::cout << "\nvoltando...\n";
-    Sleep(2000);
 }
 
+void verificarColetaItem()
+{
+    for (Item& item : state.itens)
+    {
+        if (!item.ativo)
+            continue;
+
+        if (item.pos.x == state.p1.pos.x && item.pos.y == state.p1.pos.y)
+        {
+            item.ativo = false;
+
+            if (item.simbolo == 'F')
+                state.hud.itemFogo++;
+
+            else if (item.simbolo == 'B')
+                state.hud.itemBombas++;
+
+            else if (item.simbolo == 'V')
+                state.hud.itemVidaExtra++;
+
+            else if (item.simbolo == 'R')
+                state.hud.itemBombaRelogio++;
+
+            else if (item.simbolo == 'E')
+                state.hud.itemEscudo++;
+
+            else if (item.simbolo == 'P')
+                state.hud.itemPassaBlocos++;
+        }
+    }
+}
 
 // loop principal
-void rodarJogo(int mapa[][wMax + 2]) {
+void rodarJogo(int mapa[][wMax]) {
 
     state = GameState();
     state.session = true;
     state.hud.inicioJogo = time(nullptr);
 
     // copia mapa
-    for (int i = 0; i < hMax + 2; i++)
-        for (int j = 0; j < wMax + 2; j++)
+    for (int i = 0; i < hMax; i++)
+        for (int j = 0; j < wMax; j++)
             screenBuffer[i][j] = mapa[i][j];
 
     criarInimigo(1, 7);
@@ -255,11 +181,14 @@ void rodarJogo(int mapa[][wMax + 2]) {
     criarInimigo(20, 10);
     criarInimigo(9, 6);
 
+    spawnarItens();
+
     bool venceu = false;
 
     while (state.session) {
 
         inputHandler();
+        verificarColetaItem();
         updateBomba();
 
         for (Enemy& e : state.enemies)
@@ -281,6 +210,7 @@ void rodarJogo(int mapa[][wMax + 2]) {
         }
 
         renderDraw(state.p1.pos.x, state.p1.pos.y, state.p1.alive, vivos, state.hud);
+        renderizarItens();
 
         if (!state.p1.alive) {
             venceu = false;
@@ -293,33 +223,7 @@ void rodarJogo(int mapa[][wMax + 2]) {
 
         Sleep(16);
     }
-
-    exibirResultado(venceu);
-}
-
-
-// menu
-int exibirMenu() {
-
-    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-
-    limparTela();
-    SetConsoleTextAttribute(h, COLOR_BOMB);
-    std::cout << "======================\n";
-    std::cout << "\nBOMBERMAN\n";
-    std::cout << "\n======================\n\n";
-    SetConsoleTextAttribute(h, COLOR_DEFAULT);
-    std::cout << "WASD = mover\n";
-    std::cout << "E = bomba\n";
-    std::cout << "T = sair\n\n";
-
-    std::cout << "1 jogar\n";
-    std::cout << "0 sair\n\n";
-
-    int op;
-    std::cin >> op;
-
-    return op;
+    renderResult(venceu);
 }
 
 
@@ -338,7 +242,7 @@ int main() {
     int op = -1;
 
     while (op != 0) {
-        op = exibirMenu();
+        op = renderMenu(); // Corrigido de exibirMenu para RenderMenu conforme definido em Render.h
 
         if (op == 1)
         {
@@ -351,4 +255,4 @@ int main() {
     std::cout << "\n Fechando...\n";
 
     return 0;
-}   
+}
