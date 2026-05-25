@@ -1,4 +1,3 @@
-
 // =============================================
 // Trabalho M1 - Bomberman
 // Algoritmos e Programação II
@@ -8,17 +7,12 @@
 #include "BomberMan.h"
 #include "Mapas.h"
 
+#include <signal.h>
 #include <iostream>
 #include <conio.h>
 #include <cstdlib>
 #include <ctime>
 
-// variaveis principais do jogo
-GameState state;
-int screenBuffer[hMax + 2][wMax + 2];
-
-
-// LOGICA DO JOGO
 
 
 // verifica se tem o target na posicao dejesada(poderia ser apenas a posicao dejesada mais pode ser util ter a posição atual de quem pediu o check)
@@ -30,7 +24,7 @@ bool checkColisao(int target, int posX, int posY, int offX, int offY) {
     if (destX < 0 || destX >= wMax + 2 || destY < 0 || destY >= hMax + 2)
         return true;
 
-    return screenBuffer[destY][destX] == target;
+    return state->screenBuffer[destY][destX] == target;
 }
 
 
@@ -38,42 +32,42 @@ bool checkColisao(int target, int posX, int posY, int offX, int offY) {
 void colocarBomba() {
 
     // apenas uma bomba
-    if (state.bomba.temBomba || state.bomba.explodindo)
+    if (state->bomba.temBomba || state->bomba.explodindo)
         return;
 
-    state.bomba.temBomba = true;
-    state.bomba.pos = state.p1.pos;
-    state.bomba.tempoBomba = 0;
+    state->bomba.temBomba = true;
+    state->bomba.pos = state->p1.pos;
+    state->bomba.tempoBomba = 0;
 
-    screenBuffer[state.bomba.pos.y][state.bomba.pos.x] = BOMBA;
-    state.hud.bombasUsadas++;
+    state->screenBuffer[state->bomba.pos.y][state->bomba.pos.x] = BOMBA;
+    state->hud.bombasUsadas++;
 }
 
 
 // cuida da explosao (criar e apagar)
 void gerenciarExplosao(int tipoTile) {
-    int bx = state.bomba.pos.x;
-    int by = state.bomba.pos.y;
+    int bx = state->bomba.pos.x;
+    int by = state->bomba.pos.y;
 
     // centro
-    if (screenBuffer[by][bx] != BLOCO_SOLIDO)
-        screenBuffer[by][bx] = tipoTile;
+    if (state->screenBuffer[by][bx] != BLOCO_SOLIDO)
+        state->screenBuffer[by][bx] = tipoTile;
 
     // cima
-    if (by > 0 && screenBuffer[by - 1][bx] != BLOCO_SOLIDO)
-        screenBuffer[by - 1][bx] = tipoTile;
+    if (by > 0 && state->screenBuffer[by - 1][bx] != BLOCO_SOLIDO)
+        state->screenBuffer[by - 1][bx] = tipoTile;
 
     // baixo
-    if (by < hMax && screenBuffer[by + 1][bx] != BLOCO_SOLIDO)
-        screenBuffer[by + 1][bx] = tipoTile;
+    if (by < hMax && state->screenBuffer[by + 1][bx] != BLOCO_SOLIDO)
+        state->screenBuffer[by + 1][bx] = tipoTile;
 
     // esquerda
-    if (bx > 0 && screenBuffer[by][bx - 1] != BLOCO_SOLIDO)
-        screenBuffer[by][bx - 1] = tipoTile;
+    if (bx > 0 && state->screenBuffer[by][bx - 1] != BLOCO_SOLIDO)
+        state->screenBuffer[by][bx - 1] = tipoTile;
 
     // direita
-    if (bx < wMax && screenBuffer[by][bx + 1] != BLOCO_SOLIDO)
-        screenBuffer[by][bx + 1] = tipoTile;
+    if (bx < wMax && state->screenBuffer[by][bx + 1] != BLOCO_SOLIDO)
+        state->screenBuffer[by][bx + 1] = tipoTile;
 }
 
 
@@ -81,25 +75,25 @@ void gerenciarExplosao(int tipoTile) {
 void updateBomba() {
 
     // esperando explodir
-    if (state.bomba.temBomba && !state.bomba.explodindo) {
-        state.bomba.tempoBomba++;
+    if (state->bomba.temBomba && !state->bomba.explodindo) {
+        state->bomba.tempoBomba++;
 
-        if (state.bomba.tempoBomba >= TICKS_UNTIL_NEXT_STATE_BOMB) {
+        if (state->bomba.tempoBomba >= TICKS_UNTIL_NEXT_STATE_BOMB) {
             gerenciarExplosao(BOMBA_EXPLOSAO);
 
-            state.bomba.temBomba = false;
-            state.bomba.explodindo = true;
-            state.bomba.cooldownBomba = 0;
+            state->bomba.temBomba = false;
+            state->bomba.explodindo = true;
+            state->bomba.cooldownBomba = 0;
         }
     }
 
     // explosao ativa
-    if (state.bomba.explodindo) {
-        state.bomba.cooldownBomba++;
+    if (state->bomba.explodindo) {
+        state->bomba.cooldownBomba++;
 
-        if (state.bomba.cooldownBomba > 20) {
+        if (state->bomba.cooldownBomba > 20) {
             gerenciarExplosao(WHITE); // limpa fogo
-            state.bomba.explodindo = false;
+            state->bomba.explodindo = false;
         }
     }
 }
@@ -107,7 +101,7 @@ void updateBomba() {
 
 // cria inimigo
 void criarInimigo(int x, int y) {
-    state.enemies.push_back(Enemy(x, y));
+    state->enemies.push_back(Enemy(x, y));
 }
 
 
@@ -118,7 +112,7 @@ void updateInimigo(Enemy& inimigo) {
         return;
 
     // morreu na explosao
-    if (screenBuffer[inimigo.pos.y][inimigo.pos.x] == BOMBA_EXPLOSAO) {
+    if (state->screenBuffer[inimigo.pos.y][inimigo.pos.x] == BOMBA_EXPLOSAO) {
         inimigo.inimigoVivo = false;
         return;
     }
@@ -160,10 +154,10 @@ void updateInimigo(Enemy& inimigo) {
 
 // ve se jogador bateu em inimigo
 bool checkColisaoJogadorInimigo() {
-    for (const Enemy& e : state.enemies) {
+    for (const Enemy& e : state->enemies) {
         if (e.inimigoVivo &&
-            e.pos.x == state.p1.pos.x &&
-            e.pos.y == state.p1.pos.y) {
+            e.pos.x == state->p1.pos.x &&
+            e.pos.y == state->p1.pos.y) {
             return true;
         }
     }
@@ -173,7 +167,7 @@ bool checkColisaoJogadorInimigo() {
 
 // ganhou o jogo?
 bool todosInimigosMortos() {
-    for (const Enemy& e : state.enemies) {
+    for (const Enemy& e : state->enemies) {
         if (e.inimigoVivo)
             return false;
     }
@@ -198,18 +192,18 @@ void inputHandler() {
         case 'a': case 'A': dx = -1; break;
         case 'd': case 'D': dx =  1; break;
         case 'e': case 'E': colocarBomba(); break;
-        case 't': case 'T': state.session = false; break;
+        case 't': case 'T': state->session = false; break;
     }
 
     if (dx != 0 || dy != 0) {
 
-        bool parede1 = checkColisao(BLOCO_SOLIDO, state.p1.pos.x, state.p1.pos.y, dx, dy);
-        bool parede2 = checkColisao(PAREDE_DESTRUTIVEL, state.p1.pos.x, state.p1.pos.y, dx, dy);
+        bool parede1 = checkColisao(BLOCO_SOLIDO, state->p1.pos.x, state->p1.pos.y, dx, dy);
+        bool parede2 = checkColisao(PAREDE_DESTRUTIVEL, state->p1.pos.x, state->p1.pos.y, dx, dy);
 
         if (!parede1 && !parede2) {
-            state.p1.pos.x += dx;
-            state.p1.pos.y += dy;
-            state.hud.movimentos++;
+            state->p1.pos.x += dx;
+            state->p1.pos.y += dy;
+            state->hud.movimentos++;
         }
     }
 }
@@ -237,66 +231,6 @@ void exibirResultado(bool venceu) {
 }
 
 
-// loop principal
-void rodarJogo(int mapa[][wMax + 2]) {
-
-    state = GameState();
-    state.session = true;
-    state.hud.inicioJogo = time(nullptr);
-
-    // copia mapa
-    for (int i = 0; i < hMax + 2; i++)
-        for (int j = 0; j < wMax + 2; j++)
-            screenBuffer[i][j] = mapa[i][j];
-
-    criarInimigo(1, 7);
-    criarInimigo(15, 5);
-    criarInimigo(3, 3);
-    criarInimigo(20, 10);
-    criarInimigo(9, 6);
-
-    bool venceu = false;
-
-    while (state.session) {
-
-        inputHandler();
-        updateBomba();
-
-        for (Enemy& e : state.enemies)
-            updateInimigo(e);
-
-        // morreu na explosao
-        if (screenBuffer[state.p1.pos.y][state.p1.pos.x] == BOMBA_EXPLOSAO)
-            state.p1.alive = false;
-
-        // morreu no inimigo
-        if (checkColisaoJogadorInimigo())
-            state.p1.alive = false;
-
-        std::vector<std::pair<int,int>> vivos;
-
-        for (const Enemy& e : state.enemies) {
-            if (e.inimigoVivo)
-                vivos.push_back({e.pos.x, e.pos.y});
-        }
-
-        renderDraw(state.p1.pos.x, state.p1.pos.y, state.p1.alive, vivos, state.hud);
-
-        if (!state.p1.alive) {
-            venceu = false;
-            state.session = false;
-        }
-        else if (todosInimigosMortos()) {
-            venceu = true;
-            state.session = false;
-        }
-
-        Sleep(16);
-    }
-
-    exibirResultado(venceu);
-}
-
 
 // menu
 int exibirMenu() {
@@ -320,6 +254,88 @@ int exibirMenu() {
     std::cin >> op;
 
     return op;
+}
+
+static const char* savePath = "saves/savegame.dk";
+void saveGame() 
+{
+    FILE* file = fopen(savePath, "wb");
+    if (file) {
+        fwrite(&state, sizeof(GameState), 1, file);
+    }
+    fclose(file);   
+}
+
+GameState loadGame() 
+{
+    GameState loadedState;
+    FILE* file = fopen(savePath, "rb");
+    if (file)
+        fread(&loadedState, sizeof(GameState), 1, file);
+    else
+        loadedState = GameState();
+    
+    fclose(file);
+}
+
+// loop principal
+void rodarJogo(int mapa[][wMax + 2]) {
+    state->session = true;
+    state->hud.inicioJogo = time(nullptr);
+
+    // copia mapa
+    for (int i = 0; i < hMax + 2; i++)
+        for (int j = 0; j < wMax + 2; j++)
+            state->screenBuffer[i][j] = mapa[i][j];
+
+    criarInimigo(1, 7);
+    criarInimigo(15, 5);
+    criarInimigo(3, 3);
+    criarInimigo(20, 10);
+    criarInimigo(9, 6);
+
+    bool venceu = false;
+
+    while (state->session) 
+    {
+        state->timestamp = time(nullptr);
+
+        inputHandler();
+        updateBomba();
+
+        for (Enemy& e : state->enemies)
+            updateInimigo(e);
+
+        // morreu na explosao
+        if (state->screenBuffer[state->p1.pos.y][state->p1.pos.x] == BOMBA_EXPLOSAO)
+            state->p1.alive = false;
+
+        // morreu no inimigo
+        if (checkColisaoJogadorInimigo())
+            state->p1.alive = false;
+
+        std::vector<std::pair<int,int>> vivos;
+
+        for (const Enemy& e : state->enemies) {
+            if (e.inimigoVivo)
+                vivos.push_back({e.pos.x, e.pos.y});
+        }
+
+        renderDraw();
+
+        if (!state->p1.alive) 
+        {
+            venceu = false;
+            state->session = false;
+        }
+        else if (todosInimigosMortos()) 
+        {
+            venceu = true;
+            state->session = false;
+        }
+    }
+
+    exibirResultado(venceu);
 }
 
 
@@ -352,3 +368,28 @@ int main() {
 
     return 0;
 }   
+
+//controle de sinais de interrupt para poder salvar o jogo ao fechar
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
+{
+    switch (fdwCtrlType)
+    {
+        // Handle the CTRL-C signal.
+        case CTRL_C_EVENT:
+        case CTRL_CLOSE_EVENT:
+        case CTRL_BREAK_EVENT:
+        case CTRL_LOGOFF_EVENT:
+        case CTRL_SHUTDOWN_EVENT:
+        {    
+            Beep(750, 500);
+            saveGame();
+            limparTela();
+            return FALSE;
+        }
+        default:
+            return FALSE;
+    }
+}
+
+
+

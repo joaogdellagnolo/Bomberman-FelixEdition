@@ -12,6 +12,7 @@
 #include <ctime>
 #include <iomanip>
 
+#include "BomberMan.h"
 
 // cores usadas no console 
 #define COLOR_WALL      FOREGROUND_BLUE | FOREGROUND_INTENSITY
@@ -21,8 +22,8 @@
 #define COLOR_EXPLOSION FOREGROUND_RED | FOREGROUND_INTENSITY
 #define COLOR_DEFAULT   FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE 
 
-#define wMax 20
-#define hMax 10
+//init var
+static const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
 // tipos de tiles que podem aparecer no mapa
 enum sprites { 
@@ -42,7 +43,7 @@ struct SpriteInfo {
 
 
 // transforma o numero do mapa em algo visivel
-SpriteInfo getSprite(int value) {
+inline SpriteInfo getSprite(int value) {
     switch (value) {
         case BLOCO_SOLIDO:
             return { (char)219, COLOR_WALL };
@@ -63,7 +64,7 @@ SpriteInfo getSprite(int value) {
 
 
 // script do professor pra nao flickar
-void renderCursorHandler() {
+inline void renderCursorHandler() {
 
     HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
     COORD coord;
@@ -79,25 +80,50 @@ void limparTela() {
     system("cls");
 }
 
-struct HudInfo {
-    int pontuacao = 0;
-    int movimentos = 0;
-    int bombasUsadas = 0;
-    int itensPegos = 0;
+void renderDraw()
+{
+    // volta cursor pro inicio pra sobrescrever frame antigo
+    renderCursorHandler();
 
-    int itemFogo = 0;
-    int itemBombas = 0;
-    int itemVidaExtra = 0;
-    int itemBombaRelogio = 0;
-    int itemSobreviveBomba = 0;
-    int itemPassaBlocos = 0;
+    for (int i = 0; i < hMax + 2; i++) {
+        for (int j = 0; j < wMax + 2; j++) {
 
-    time_t inicioJogo = 0;
-};
+            // verifica se tem inimigo aqui
+            bool temInimigo = false;
 
+            for (const auto& pos : state->enemies) {
+                if (i == pos.pos.y && j == pos.pos.x) {
+                    temInimigo = true;
+                    break;
+                }
+            }
 
-void renderHUD(HANDLE hConsole, const HudInfo& hud) {
-    int tempoDecorrido = time(nullptr) - hud.inicioJogo;
+            // ordem de prioridade:
+            // jogador > inimigo > mapa
+            if (state->p1.alive && i == state->p1.pos.y && j == state->p1.pos.x) 
+            {
+                SetConsoleTextAttribute(hConsole, COLOR_PLAYER);
+                std::cout << 'P';
+            }
+            else if (temInimigo) 
+            {
+                SetConsoleTextAttribute(hConsole, COLOR_ENEMY);
+                std::cout << 'E';
+            }
+            else 
+            {
+                SpriteInfo info = getSprite(state->screenBuffer[i][j]);
+
+                SetConsoleTextAttribute(hConsole, info.color);
+                std::cout << info.character;
+            }
+        }
+
+        std::cout << "\n";
+    }
+    
+    //FOOTER <- DEIXAR NO FINAL!!
+    int tempoDecorrido = time(nullptr) - state->hud.inicioJogo;
     int minutos = tempoDecorrido / 60;
     int segundos = tempoDecorrido % 60;
 
@@ -112,78 +138,23 @@ void renderHUD(HANDLE hConsole, const HudInfo& hud) {
               << std::setfill(' ')
               << " \n";
 
-    std::cout << "| Pontos: " << hud.pontuacao << " \n";
-    std::cout << "| Movimentos: " << hud.movimentos << " \n";
-    std::cout << "| Bombas: " << hud.bombasUsadas << " \n";
+    std::cout << "| Pontos: " << state->hud.pontuacao << " \n";
+    std::cout << "| Movimentos: " << state->hud.movimentos << " \n";
+    std::cout << "| Bombas: " << state->hud.bombasUsadas << " \n";
 
     std::cout << "+----------------------+\n";
 
-    std::cout << "| Fogo +" << hud.itemFogo << " \n";
-    std::cout << "| Bombas +" << hud.itemBombas << " \n";
-    std::cout << "| Vida +" << hud.itemVidaExtra << " \n";
-    std::cout << "| Relogio " << hud.itemBombaRelogio << " \n";
-    std::cout << "| Escudo " << hud.itemSobreviveBomba << " \n";
-    std::cout << "| Passa Blocos " << hud.itemPassaBlocos << " \n";
+    std::cout << "| Fogo +" << state->hud.itemFogo << " \n";
+    std::cout << "| Bombas +" << state->hud.itemBombas << " \n";
+    std::cout << "| Vida +" << state->hud.itemVidaExtra << " \n";
+    std::cout << "| Relogio " << state->hud.itemBombaRelogio << " \n";
+    std::cout << "| Escudo " << state->hud.itemSobreviveBomba << " \n";
+    std::cout << "| Passa Blocos " << state->hud.itemPassaBlocos << " \n";
 
     std::cout << "+----------------------+\n";
+    //END FOOTER
 
     SetConsoleTextAttribute(hConsole, COLOR_DEFAULT);
-}
-
-// desenha tudo na tela
-// jogador + inimigos + mapa
-void renderDraw(int playerX, int playerY, bool playerAlive,
-                const std::vector<std::pair<int,int>>& inimigosVivos,
-                const HudInfo& hud)
-{
-    // buffer do main
-    extern int screenBuffer[hMax + 2][wMax + 2];
-
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
-    // volta cursor pro inicio pra sobrescrever frame antigo
-    renderCursorHandler();
-
-    for (int i = 0; i < hMax + 2; i++) {
-        for (int j = 0; j < wMax + 2; j++) {
-
-            // verifica se tem inimigo aqui
-            bool temInimigo = false;
-
-            for (const auto& pos : inimigosVivos) {
-                if (i == pos.second && j == pos.first) {
-                    temInimigo = true;
-                    break;
-                }
-            }
-
-            // ordem de prioridade:
-            // jogador > inimigo > mapa
-            if (playerAlive && i == playerY && j == playerX) {
-
-                SetConsoleTextAttribute(hConsole, COLOR_PLAYER);
-                std::cout << 'P';
-
-            }
-            else if (temInimigo) {
-
-                SetConsoleTextAttribute(hConsole, COLOR_ENEMY);
-                std::cout << 'E';
-
-            }
-            else {
-
-                SpriteInfo info = getSprite(screenBuffer[i][j]);
-
-                SetConsoleTextAttribute(hConsole, info.color);
-                std::cout << info.character;
-            }
-        }
-
-        std::cout << "\n";
-    }
-    
-    renderHUD(hConsole, hud);
     
     // volta cor padrao no final
     SetConsoleTextAttribute(hConsole, COLOR_DEFAULT);

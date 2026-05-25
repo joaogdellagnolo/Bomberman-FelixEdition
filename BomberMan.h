@@ -6,17 +6,19 @@
 // Desenvolvido por:  Joao Felix, Derick Kunz, Joao Guilherme, Eduardo Loyola
 // =============================================
 
+
 #include <iostream>
 #include <windows.h>
 #include <vector>
-#include "Render.h"
 #include <ctime>
 
+//variaveis globais
+extern struct GameState* state; 
 
 // CONSTANTES
-
-//Modificar esses valores para + desacelera e para - acelera a bomba/inimigo.
-#define TICKS_UNTIL_NEXT_POS_ENEMY 30
+#define wMax 20
+#define hMax 10
+#define TICKS_UNTIL_NEXT_POS_ENEMY 30 //Modificar esses valores para + desacelera e para - acelera a bomba/inimigo.
 #define TICKS_UNTIL_NEXT_STATE_BOMB 45
 
 
@@ -53,29 +55,29 @@ struct Bomba {
     int cooldownBomba = 0;
 };
 
+
+struct HudInfo {
+    int pontuacao = 0;
+    int movimentos = 0;
+    int bombasUsadas = 0;
+    int itensPegos = 0;
+
+    int itemFogo = 0;
+    int itemBombas = 0;
+    int itemVidaExtra = 0;
+    int itemBombaRelogio = 0;
+    int itemSobreviveBomba = 0;
+    int itemPassaBlocos = 0;
+    time_t inicioJogo;
+};
+
+
 struct GameState {
     bool session = false;
     Player p1;
     Bomba bomba;
     std::vector<Enemy> enemies;
     HudInfo hud;
+    int screenBuffer[hMax + 2][wMax + 2];
+    time_t timestamp;
 };
-
-
-//Variaveis (Acessiveis por outros arquivos)
-
-extern GameState state;
-extern int screenBuffer[hMax + 2][wMax + 2];
-
-
-//Prototipos das funções
-
-
-void rodarJogo(int mapa[][wMax + 2]);
-void inputHandler();
-void updateBomba();
-void updateInimigo(Enemy& inimigo);
-void colocarBomba();
-void gerenciarExplosao(int tipoTile);
-bool checkColisao(int target, int posX, int posY, int offX, int offY);
-void criarInimigo(int x, int y);
