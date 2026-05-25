@@ -12,15 +12,12 @@
 #include <vector>
 #include <ctime>
 
-//variaveis globais
-extern struct GameState* state; 
-
 // CONSTANTES
-
-//Modificar esses valores para + desacelera e para - acelera a bomba/inimigo.
+#define FRAME_SPEED 0.1 //velocidade de cada frame (em segundos)
 #define TICKS_UNTIL_NEXT_STATE_BOMB 45
-#define wMax 20
-#define hMax 10
+#define wMax 22
+#define hMax 12
+
 
 // STRUCTS (Dados do Jogo)
 
@@ -95,3 +92,9 @@ struct GameState {
     int screenBuffer[hMax + 2][wMax + 2];
     time_t timestamp;
 };
+static struct GameState* state; 
+
+
+bool checkColisao(int target, int posX, int posY, int offX, int offY);
+
+

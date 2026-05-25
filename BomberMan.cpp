@@ -6,7 +6,7 @@
 
 #include "BomberMan.h"
 #include "Mapas.h"
-#include "inimigo.h"
+#include "Inimigo.h"
 #include "Bomba.h"
 #include "Menu.h"
 
@@ -202,12 +202,12 @@ GameState loadGame()
         loadedState = GameState();
     
     fclose(file);
+    return loadedState;
 }
 
 // loop principal
 void rodarJogo(int mapa[][wMax]) 
 {
-
     state = new GameState();
     state->session = true;
     state->hud.inicioJogo = time(nullptr);
@@ -225,7 +225,10 @@ void rodarJogo(int mapa[][wMax])
 
     bool venceu = false;
 
-    while (state->session) {
+    struct timespec req = {};
+    while (state->session) 
+    {
+        clock_t start = clock(); 
 
         inputHandler();
         verificarColetaItem();
@@ -261,15 +264,22 @@ void rodarJogo(int mapa[][wMax])
             state->session = false;
         }
 
-        Sleep(16);
+        clock_t end = clock(); 
+        double elapsed = (double) (end - start) / CLOCKS_PER_SEC;
+        if (elapsed < FRAME_SPEED) 
+        {
+            req.tv_sec = 0;
+            req.tv_nsec = (FRAME_SPEED - elapsed) * 1000000000; // converte para nanosegundos
+            nanosleep(&req, nullptr);
+        }
     }
     renderResult(venceu);
 }
 
 
 // main
-int main() {
-
+int main() 
+{
     // esconde cursor 
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_CURSOR_INFO c;

@@ -34,7 +34,7 @@ void criarInimigo(int mapa[hMax][wMax], int qtd) {
 
         // 3. Não pode spawnar onde já existe outro inimigo criado
         bool jaTemInimigo = false;
-        for (const Enemy& e : state.enemies) {
+        for (const Enemy& e : state->enemies) {
             if (e.pos.x == x && e.pos.y == y) {
                 jaTemInimigo = true;
                 break;
@@ -109,7 +109,7 @@ void updateInimigo(Enemy& inimigo) {
 
     // 2. Check de colisão com OUTROS inimigos vivos
     if (!bloqueado) {
-        for (const Enemy& outro : state.enemies) {
+        for (const Enemy& outro : state->enemies) {
             // Ignora o próprio inimigo que está se movendo (compara o endereço de memória)
             if (&outro == &inimigo) {
                 continue;
