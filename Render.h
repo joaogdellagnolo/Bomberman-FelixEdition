@@ -209,27 +209,3 @@ void renderResult(bool venceu) {
     std::cout << "\nvoltando...\n";
     Sleep(2000);
 }
-
-// menu
-int renderMenu() {
-
-    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-
-    limparTela();
-    SetConsoleTextAttribute(h, COLOR_BOMB);
-    std::cout << "======================\n";
-    std::cout << "\nBOMBERMAN\n";
-    std::cout << "\n======================\n\n";
-    SetConsoleTextAttribute(h, COLOR_DEFAULT);
-    std::cout << "WASD = mover\n";
-    std::cout << "E = bomba\n";
-    std::cout << "T = sair\n\n";
-
-    std::cout << "1 jogar\n";
-    std::cout << "0 sair\n\n";
-
-    int op;
-    std::cin >> op;
-
-    return op;
-}

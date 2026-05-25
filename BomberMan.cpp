@@ -8,6 +8,7 @@
 #include "Mapas.h"
 #include "inimigo.h"
 #include "Bomba.h"
+#include "Menu.h"
 
 #include <iostream>
 #include <conio.h>
@@ -239,20 +240,25 @@ int main() {
 
     srand(time(0));
 
-    int op = -1;
 
-    while (op != 0) {
-        op = renderMenu(); // Corrigido de exibirMenu para RenderMenu conforme definido em Render.h
+    int opcao = renderMenu();
 
-        if (op == 1)
-        {
+    switch (opcao) {
+
+        case 1:
+            cout << "Iniciando jogo...\n";
             limparTela();
             rodarJogo(map_0);
-        }
-    }
+            break;
 
-    limparTela();
-    std::cout << "\n Fechando...\n";
+        case 2:
+            cout << "Mostrando creditos...\n";
+            break;
+
+        case 3:
+            cout << "Saindo...\n";
+            break;
+    }
 
     return 0;
 }

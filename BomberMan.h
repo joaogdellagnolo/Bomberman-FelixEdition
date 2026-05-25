@@ -12,13 +12,6 @@
 #include "Render.h"
 #include <ctime>
 
-
-// CONSTANTES
-
-//Modificar esses valores para + desacelera e para - acelera a bomba/inimigo.
-#define TICKS_UNTIL_NEXT_STATE_BOMB 45
-
-
 // STRUCTS (Dados do Jogo)
 
 //facilita o acesso a cordanada de entidades 
