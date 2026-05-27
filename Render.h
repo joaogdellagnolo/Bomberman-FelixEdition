@@ -1,9 +1,8 @@
 #pragma once
 
 // =============================================
-// Trabalho M1 - Bomberman
+// Trabalho M2 - Bomberman
 // Algoritmos e Programação II
-// Desenvolvido por:  Joao Felix, Derick Kunz, Joao Guilherme, Eduardo Loyola
 // =============================================
 
 #include <iostream>
@@ -14,196 +13,183 @@
 
 #include "BomberMan.h"
 
-// cores usadas no console 
+// Cores do console
 #define COLOR_WALL      FOREGROUND_BLUE | FOREGROUND_INTENSITY
 #define COLOR_PLAYER    FOREGROUND_GREEN | FOREGROUND_INTENSITY
+#define COLOR_PLAYER2   FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY
 #define COLOR_ENEMY     FOREGROUND_RED | FOREGROUND_INTENSITY
-#define COLOR_BOMB      FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY 
+#define COLOR_BOSS      FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY
+#define COLOR_BOMB      FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY
 #define COLOR_EXPLOSION FOREGROUND_RED | FOREGROUND_INTENSITY
-#define COLOR_DEFAULT   FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE 
+#define COLOR_DEFAULT   FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
+#define COLOR_PORTAL    FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY
 
-//init var
 static const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
-// tipos de tiles que podem aparecer no mapa
-enum sprites { 
-    WHITE, 
-    BLOCO_SOLIDO, 
-    BOMBA, 
-    BOMBA_TICK, 
-    BOMBA_EXPLOSAO, 
-    PAREDE_DESTRUTIVEL 
+enum sprites {
+    WHITE,
+    BLOCO_SOLIDO,
+    BOMBA,
+    BOMBA_TICK,
+    BOMBA_EXPLOSAO,
+    PAREDE_DESTRUTIVEL,
+    PORTAL_TILE
 };
 
-// guarda o que desenhar (char + cor)
 struct SpriteInfo {
     char character;
     WORD color;
 };
 
-
-// transforma o numero do mapa em algo visivel
 inline SpriteInfo getSprite(int value) {
     switch (value) {
-        case BLOCO_SOLIDO:
-            return { (char)219, COLOR_WALL };
-
-        case PAREDE_DESTRUTIVEL:
-            // mesma cor da parede, so que mais fraca
-            return { '#', (WORD)(COLOR_WALL & ~FOREGROUND_INTENSITY) };
-
-        case BOMBA:
-            return { 'O', COLOR_BOMB };
-
-        case BOMBA_EXPLOSAO:
-            return { (char)178, COLOR_EXPLOSION };
-
-        default:
-            return { ' ', COLOR_DEFAULT };
+        case BLOCO_SOLIDO:       return { (char)219, COLOR_WALL };
+        case PAREDE_DESTRUTIVEL: return { '#', (WORD)(COLOR_WALL & ~FOREGROUND_INTENSITY) };
+        case BOMBA:              return { 'O', COLOR_BOMB };
+        case BOMBA_EXPLOSAO:     return { (char)178, COLOR_EXPLOSION };
+        case PORTAL_TILE:        return { 'X', COLOR_PORTAL };
+        default:                 return { ' ', COLOR_DEFAULT };
     }
 }
 
-
-// script do professor pra nao flickar
 inline void renderCursorHandler() {
-
     HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
-    COORD coord;
-    coord.X = 0;
-    coord.Y = 0;
+    COORD coord = {0, 0};
     SetConsoleCursorPosition(out, coord);
-    
 }
 
+inline void limparTela() { system("cls"); }
 
-// limpa a tela inteira (obvio)
-inline void limparTela() {
-    system("cls");
-}
-
-void renderDraw()
-{
-    // buffer do main
-    extern int screenBuffer[hMax][wMax];
-
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
-    // volta cursor pro inicio pra sobrescrever frame antigo
+void renderDraw() {
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     renderCursorHandler();
 
+    SpriteInfo frameBuffer[hMax][wMax];
+
+    // 1. Mapa base
+    for (int i = 0; i < hMax; i++)
+        for (int j = 0; j < wMax; j++)
+            frameBuffer[i][j] = getSprite(state->screenBuffer[i][j]);
+
+    // 2. Itens
+    for (Item& item : state->itens)
+        if (item.ativo)
+            frameBuffer[item.pos.y][item.pos.x] = { item.simbolo, COLOR_BOMB };
+
+    // 3. Inimigos
+    for (const auto& e : state->enemies) {
+        if (e.inimigoVivo) {
+            char sym = e.boss ? 'B' : 'E';
+            WORD cor = e.boss ? COLOR_BOSS : COLOR_ENEMY;
+            frameBuffer[e.pos.y][e.pos.x] = { sym, cor };
+        }
+    }
+
+    // 4. Jogador 1
+    if (state->p1.alive) {
+        char sym = (state->p1.tempoImune > 0) ? 'p' : 'P';
+        frameBuffer[state->p1.pos.y][state->p1.pos.x] = { sym, COLOR_PLAYER };
+    }
+
+    // 5. Jogador 2
+    if (state->p2Ativo && state->p2Vivo) {
+        char sym = (state->p2.tempoImune > 0) ? 'q' : 'Q';
+        frameBuffer[state->p2.pos.y][state->p2.pos.x] = { sym, COLOR_PLAYER2 };
+    }
+
+    // Imprime o frame
     for (int i = 0; i < hMax; i++) {
         for (int j = 0; j < wMax; j++) {
-
-            // verifica se tem inimigo aqui
-            bool temInimigo = false;
-
-            for (const auto& pos : state->enemies) {
-                if (pos.inimigoVivo && i == pos.pos.y && j == pos.pos.x) {
-                    temInimigo = true;
-                    break;
-                }
-            }
-
-            // verifica se tem item aqui
-            Item* itemAtual = nullptr;
-
-            for (Item& item : state->itens) {
-                if (item.ativo && item.pos.x == j && item.pos.y == i) {
-                    itemAtual = &item;
-                    break;
-                }
-            }
-
-            // ordem de prioridade:
-            // jogador > inimigo > item > mapa
-            if (state->p1.alive && i == state->p1.pos.y && j == state->p1.pos.x) 
-            {
-                SetConsoleTextAttribute(hConsole, COLOR_PLAYER);
-                std::cout << 'P';
-            }
-            else if (temInimigo) 
-            {
-                SetConsoleTextAttribute(hConsole, COLOR_ENEMY);
-                std::cout << 'E';
-            }
-            else if (itemAtual != nullptr)
-            {
-                SetConsoleTextAttribute(hConsole, COLOR_BOMB);
-                std::cout << itemAtual->simbolo;
-            }
-            else 
-            {
-                SpriteInfo info = getSprite(state->screenBuffer[i][j]);
-
-                SetConsoleTextAttribute(hConsole, info.color);
-                std::cout << info.character;
-            }
+            SetConsoleTextAttribute(h, frameBuffer[i][j].color);
+            std::cout << frameBuffer[i][j].character;
         }
-
         std::cout << "\n";
     }
-    
-    //FOOTER <- DEIXAR NO FINAL!!
-    int tempoDecorrido = time(nullptr) - state->hud.inicioJogo;
+
+    // HUD
+    int tempoDecorrido = (int)(time(nullptr) - state->hud.inicioJogo);
     int minutos = tempoDecorrido / 60;
     int segundos = tempoDecorrido % 60;
 
-    SetConsoleTextAttribute(hConsole, COLOR_BOMB);
+    SetConsoleTextAttribute(h, COLOR_BOMB);
+    std::cout << "\n+--------------------------------------------+\n";
+    std::cout << "| FASE " << state->faseAtual << "/" << TOTAL_FASES;
+    std::cout << "  Tempo: "
+              << std::setw(2) << std::setfill('0') << minutos << ":"
+              << std::setw(2) << segundos << std::setfill(' ') << "        |\n";
+    std::cout << "| Pontos: " << std::setw(6) << state->hud.pontuacao
+              << "  Movimentos: " << std::setw(4) << state->hud.movimentos
+              << "  Bombas: " << std::setw(3) << state->hud.bombasUsadas << " |\n";
 
-    std::cout << "\n+----------------------+\n";
+    SetConsoleTextAttribute(h, COLOR_PLAYER);
+    std::cout << "| P1 Vidas:" << state->p1.vidas;
+    if (state->p1.escudo) std::cout << " [ESCUDO]";
 
-    std::cout << "| Tempo: "
-              << std::setw(2) << std::setfill('0') << minutos
-              << ":"
-              << std::setw(2) << segundos
-              << std::setfill(' ')
-              << " \n";
+    if (state->p2Ativo) {
+        SetConsoleTextAttribute(h, COLOR_PLAYER2);
+        std::cout << "  P2 Vidas:" << state->p2.vidas;
+        if (state->p2.escudo) std::cout << " [ESCUDO]";
+    }
 
-    std::cout << "| Pontos: " << state->hud.pontuacao << " \n";
-    std::cout << "| Movimentos: " << state->hud.movimentos << " \n";
-    std::cout << "| Bombas: " << state->hud.bombasUsadas << " \n";
+    SetConsoleTextAttribute(h, COLOR_BOMB);
+    std::cout << "\n| Items: Fogo+" << state->hud.itemFogo
+              << " Bomb+" << state->hud.itemBombas
+              << " Vida+" << state->hud.itemVidaExtra
+              << " Rel:" << state->hud.itemBombaRelogio
+              << " Esc:" << state->hud.itemEscudo << "  |\n";
+    std::cout << "+--------------------------------------------+\n";
 
-    std::cout << "+----------------------+\n";
+    if (state->p2Ativo) {
+        SetConsoleTextAttribute(h, COLOR_PLAYER);
+        std::cout << "P1: WASD+E  ";
+        SetConsoleTextAttribute(h, COLOR_PLAYER2);
+        std::cout << "P2: Setas+Enter\n";
+    } else {
+        SetConsoleTextAttribute(h, COLOR_DEFAULT);
+        std::cout << "WASD=Mover  E=Bomba  P=Salvar\n";
+    }
 
-    std::cout << "| Fogo +" << state->hud.itemFogo << " \n";
-    std::cout << "| Bombas +" << state->hud.itemBombas << " \n";
-    std::cout << "| Vida +" << state->hud.itemVidaExtra << " \n";
-    std::cout << "| Relogio " << state->hud.itemBombaRelogio << " \n";
-    std::cout << "| Escudo " << state->hud.itemEscudo << " \n";
-    std::cout << "| Passa Blocos " << state->hud.itemPassaBlocos << " \n";
-
-    std::cout << "+----------------------+\n";
-    //END FOOTER
-
-    SetConsoleTextAttribute(hConsole, COLOR_DEFAULT);
-    
-    // volta cor padrao no final
-    SetConsoleTextAttribute(hConsole, COLOR_DEFAULT);
+    SetConsoleTextAttribute(h, COLOR_DEFAULT);
 }
 
-// tela de fim
-void renderResult(bool venceu) {
-
+void renderResult(bool venceu, bool todasFases, int pontuacao, int movimentos, int bombasUsadas, int itensPegos) {
     limparTela();
-
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    if (venceu) {
+    if (todasFases) {
+        SetConsoleTextAttribute(h, COLOR_PORTAL);
+        std::cout << "\n\n  PARABENS! VOCE COMPLETOU TODAS AS FASES!\n";
+    } else if (venceu) {
         SetConsoleTextAttribute(h, COLOR_PLAYER);
-        std::cout << "\n\n  VOCE VENCEU!\n";
+        std::cout << "\n\n  FASE CONCLUIDA!\n";
     } else {
         SetConsoleTextAttribute(h, COLOR_ENEMY);
         std::cout << "\n\n  GAME OVER!\n";
     }
 
     SetConsoleTextAttribute(h, COLOR_DEFAULT);
+    std::cout << "\nPontuacao: " << pontuacao << "\n";
+    std::cout << "Movimentos: " << movimentos << "\n";
+    std::cout << "Bombas usadas: " << bombasUsadas << "\n";
+    std::cout << "Itens pegos: " << itensPegos << "\n";
+    std::cout << "\nPressione qualquer tecla...\n";
+    system("pause > nul");
+}
 
-    std::cout << "\nPontuacao final: " << state->hud.pontuacao << "\n";
-    std::cout << "Movimentos: " << state->hud.movimentos << "\n";
-    std::cout << "Bombas usadas: " << state->hud.bombasUsadas << "\n";
-    std::cout << "Itens pegos: " << state->hud.itensPegos << "\n";
-
-    std::cout << "\nPressione qualquer tecla para voltar ao menu...\n";
-
+// Tela de transição entre fases
+void renderTransicaoFase(int proxFase) {
+    limparTela();
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(h, COLOR_PORTAL);
+    std::cout << "\n\n  *** FASE " << (proxFase-1) << " CONCLUIDA! ***\n\n";
+    SetConsoleTextAttribute(h, COLOR_DEFAULT);
+    std::cout << "  Preparando FASE " << proxFase << "...\n";
+    std::cout << "  (Itens resetados para a proxima fase)\n\n";
+    if (proxFase == 3) {
+        SetConsoleTextAttribute(h, COLOR_ENEMY);
+        std::cout << "  AVISO: BOSS nesta fase!\n";
+        SetConsoleTextAttribute(h, COLOR_DEFAULT);
+    }
+    std::cout << "\n  Pressione qualquer tecla para continuar...\n";
     system("pause > nul");
 }
