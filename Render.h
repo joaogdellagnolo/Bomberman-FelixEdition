@@ -112,12 +112,12 @@ void renderDraw() {
     int segundos = tempoDecorrido % 60;
 
     SetConsoleTextAttribute(h, COLOR_BOMB);
-    #define SIZE_HORIZONTAL 100
-
+    
+    static const std::string SIZE_HORIZONTAL = "100"
     std::string formated = "+" + std::string(SIZE_HORIZONTAL, '-') + "+";
     std::string title = " FASE " + std::to_string(state->faseAtual) + "/" + std::to_string(TOTAL_FASES) +" Tempo: " + (minutos < 10 ? "0" : "") + std::to_string(minutos) + ":" +
                     (segundos < 10 ? "0" : "") + std::to_string(segundos);
-    std::string hudInfo "Pontos: " << std::setw(6) << state->hud.pontuacao
+    std::string hudInfo = "Pontos: " << std::setw(6) << state->hud.pontuacao
               << " Movimentos: " << std::setw(4) << state->hud.movimentos
               << " Bombas: " << std::setw(3) << state->hud.bombasUsadas;
     printf("|%"+SIZE_HORIZONTAL+"s|\n", hudInfo.c_str());
