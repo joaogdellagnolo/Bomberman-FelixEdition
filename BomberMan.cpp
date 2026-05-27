@@ -158,30 +158,6 @@ void verificarColetaItem()
     }
 }
 
-// menu
-int exibirMenu() {
-
-    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-
-    limparTela();
-    SetConsoleTextAttribute(h, COLOR_BOMB);
-    std::cout << "======================\n";
-    std::cout << "\nBOMBERMAN\n";
-    std::cout << "\n======================\n\n";
-    SetConsoleTextAttribute(h, COLOR_DEFAULT);
-    std::cout << "WASD = mover\n";
-    std::cout << "E = bomba\n";
-    std::cout << "T = sair\n\n";
-
-    std::cout << "1 jogar\n";
-    std::cout << "0 sair\n\n";
-
-    int op;
-    std::cin >> op;
-
-    return op;
-}
-
 static const char* savePath = "saves/savegame.dk";
 void saveGame() 
 {
@@ -206,7 +182,7 @@ GameState loadGame()
 }
 
 // loop principal
-void rodarJogo(int mapa[][wMax]) 
+void rodarJogo(int mapa[][wMax], int diff) 
 {
     state = new GameState();
     state->session = true;
@@ -296,9 +272,9 @@ int main()
 
         if (opcao == 1) {
             limparTela();
-            rodarJogo(map_0); // Quando rodarJogo acabar, o 'while' vai repetir e mostrar o menu de novo!
+            rodarJogo(map_0,1); // Quando rodarJogo acabar, o 'while' vai repetir e mostrar o menu de novo!
         } 
-        else if (opcao == 4) {
+        else if (opcao == 6) {
             executando = false; // Fecha o jogo de forma limpa
         }
     }

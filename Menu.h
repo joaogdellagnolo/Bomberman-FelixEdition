@@ -10,10 +10,13 @@ int renderMenu() {
 
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    const int TOTAL_OPCOES = 4;
+    const int TOTAL_OPCOES = 7;
 
     std::string opcoes[TOTAL_OPCOES] = {
         "Jogar",
+        "Continuar",
+        "Placar",
+        "Como Jogar",
         "Dificuldades",
         "Creditos",
         "Sair"
@@ -73,7 +76,7 @@ int renderMenu() {
                 case 'w':
                 case 'W':
 
-                    selecionado--;
+                    selecionado--;  
 
                     if (selecionado < 0)
                         selecionado = TOTAL_OPCOES - 1;
