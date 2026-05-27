@@ -192,4 +192,5 @@ void renderTransicaoFase(int proxFase) {
     }
     std::cout << "\n  Pressione qualquer tecla para continuar...\n";
     system("pause > nul");
+    limparTela();
 }
