@@ -427,6 +427,7 @@ int main() {
     bool executando  = true;
     int  gameDiff    = 1;
     bool p2Ativo     = false;
+    bool iaAtiva     = false;
 
     while (executando) {
         int opcao = renderMenu(p2Ativo);
