@@ -113,23 +113,20 @@ void renderDraw() {
 
     SetConsoleTextAttribute(h, COLOR_BOMB);
     
-    static const std::string SIZE_HORIZONTAL = "100";
+    static const int SIZE_HORIZONTAL = 60;
     std::string formated = "+" + std::string(SIZE_HORIZONTAL, '-') + "+";
-    std::string title = " FASE " + std::to_string(state->faseAtual) + "/" + std::to_string(TOTAL_FASES) +" Tempo: " + (minutos < 10 ? "0" : "") + std::to_string(minutos) + ":" +
-                    (segundos < 10 ? "0" : "") + std::to_string(segundos);
-    std::string hudInfoStr = "Pontos: " + std::to_string(state->hud.pontuacao) +
-                         " Movimentos: " + std::to_string(state->hud.movimentos) +
-                         " Bombas: " + std::to_string(state->hud.bombasUsadas);
+    std::string title = " FASE " + std::to_string(state->faseAtual) + "/" + std::to_string(TOTAL_FASES) 
+                        +" Tempo: "+(minutos < 10 ? "0" : "") + std::to_string(minutos) + ":" + (segundos < 10 ? "0" : "") + std::to_string(segundos);
+    std::string hudInfoStr = "Pontos: " + std::to_string(state->hud.pontuacao) + " Movimentos: " 
+                        + std::to_string(state->hud.movimentos) + " Bombas: " + std::to_string(state->hud.bombasUsadas);
         
-    printf("|%"+SIZE_HORIZONTAL+"s|\n", hudInfoStr.c_str());
+    std::cout << std::setw(SIZE_HORIZONTAL) << hudInfoStr << "\n";
 
-    std::cout << formated << "\n";
-    printf("|%"+SIZE_HORIZONTAL+"s|\n", title.c_str());
+    std::cout << formated << '\n';
+    std::cout << "|" << std::setw(SIZE_HORIZONTAL) << title << "|\n";
     std::string vidas = " P1 Vidas:" + std::to_string(state->p1.vidas);
     if (state->p1.escudo) 
         vidas += " [ESCUDO]";
-    else 
-        vidas += "         ";
 
     if (state->p2Ativo) 
     {
@@ -137,16 +134,16 @@ void renderDraw() {
         if (state->p2.escudo) 
             vidas += " [ESCUDO]";
     }
-    printf("|%"+SIZE_HORIZONTAL+"s|\n", vidas.c_str());
+    std::cout << "|" << std::setw(SIZE_HORIZONTAL) << vidas << "|\n";
 
 //    SetConsoleTextAttribute(h, COLOR_BOMB);
     std::string itens = " Items: Fogo+" + std::to_string(state->hud.itemFogo) +
                         " Bomb+" + std::to_string(state->hud.itemBombas) +
                         " Vida+" + std::to_string(state->hud.itemVidaExtra) +
                         " Rel:" + std::to_string(state->hud.itemBombaRelogio) +
-                        " Esc:" + std::to_string(state->hud.itemEscudo) ;
-    printf("|%"+SIZE_HORIZONTAL+"s|\n", itens.c_str());
-    std::cout << formated << "\n";
+                        " Esc:" + std::to_string(state->hud.itemEscudo);
+    std::cout << "|" << std::setw(SIZE_HORIZONTAL) << itens << "|\n";
+    std::cout << formated << '\n';;
 
     if (state->p2Ativo) {
         SetConsoleTextAttribute(h, COLOR_PLAYER);
